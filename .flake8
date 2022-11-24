@@ -1,0 +1,22 @@
+[flake8]
+max-complexity = 8
+max-line-length = 120
+max-doc-length = 120
+indent-size = 4
+exclude =
+    src/tests/pytest.ini
+    .git
+    *__init__.py
+    __pycache__
+    Dockerfile
+    *.pyc
+    *.txt
+    *.yml
+    *migrations*
+    *.md
+    Makefile
+format = '%(path)s :: (%(row)d,%(col)d) :: %(code)s - %(text)s'
+show-source = False
+statistics = True
+jobs = 1
+doctests = True

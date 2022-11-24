@@ -1,0 +1,25 @@
+[tool.black]
+line-length = 120
+force-exclude = '(\Dockerfile|\.txt|\.yml)'
+
+[tool.isort]
+profile="black"
+sections="FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
+
+[tool.commitizen]
+name = "cz_customize"
+# See for more details https://github.com/commitizen-tools/commitizen/blob/master/docs/customization.md
+
+[tool.commitizen.customize]
+message_template = "[{{issue}}] {{message}}"
+example = "[JIRA-99] this feature enable customize through config file"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "issue"
+message = "Jira Issue ID (required):"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "message"
+message = "Git commit message (required):"
