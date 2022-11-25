@@ -11,9 +11,13 @@ class DevelopmentConfig(BaseConfig):
     pass
 
 
+class TestingConfig(BaseConfig):
+    pass
+
+
 def set_app_config(app: Flask, mode: str) -> None:
     try:
-        config = {"Development": DevelopmentConfig}[mode]
+        config = {"Development": DevelopmentConfig, "Testing": TestingConfig}[mode]
 
         app.config.from_object(config)
     except KeyError as e:
