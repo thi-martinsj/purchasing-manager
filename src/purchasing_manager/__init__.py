@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask
 
 from .config import set_app_config
-from .presentation.views.api import common_bp
+from .presentation.views.api import health_bp
 
 load_dotenv()
 DEPLOY_ENV = os.environ.get("DEPLOY_ENV", "Development")
@@ -20,4 +20,4 @@ def create_app() -> Flask:
 
 
 def _register_blueprints(app: Flask) -> None:
-    app.register_blueprint(common_bp)
+    app.register_blueprint(health_bp)

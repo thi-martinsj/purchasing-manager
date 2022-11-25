@@ -16,7 +16,7 @@ def test_health_endpoint_must_return_200(api_client, app, endpoint):
 
 
 @pytest.mark.parametrize("endpoint", ["/api/", "/api/healthz"])
-@patch("purchasing_manager.presentation.views.common.Index.get")
+@patch("purchasing_manager.presentation.views.api.Index.get")
 def test_health_must_return_500(mock_get, api_client, endpoint):
     fp = mock_open()
     fp.close = Mock()

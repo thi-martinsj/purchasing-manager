@@ -1,16 +1,24 @@
 from flask import Blueprint
-from flask_restx import Api
+from flask import current_app as app
+from flask_restx import Api, Resource
 
-from .common import Index
+from .schemas import health
 
-common_bp = Blueprint("common", __name__, url_prefix="/api")
+health_bp = Blueprint("Health", __name__, url_prefix="/api")
 
 api = Api(
-    common_bp,
+    health_bp,
     title="Purchasing Manager",
     description="Purchasing Manager API",
     doc="/docs/swagger",
 )
 
-common_ns = api.namespace("", description="Purchasing Manager API endpoints")
-common_ns.add_resource(Index, "/", "/healthz")
+ns = api.namespace("", description="Purchasing Manager API endpoints")
+ns.add_model(health.name, health)
+
+
+@ns.response(200, "OK", health)
+@ns.route("/", "/healthz")
+class Index(Resource):
+    def get(self) -> dict:
+        return dict(service="Purchasing Manager", version=app.config["VERSION"])

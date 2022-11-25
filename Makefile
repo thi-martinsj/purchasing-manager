@@ -28,3 +28,6 @@ coverage: clean
 	@echo "Coverage - Running testing with coverage"
 	@cd src && pytest --cov-report term-missing --cov=purchasing_manager -s -vv \
 	--junitxml=test_reports/junit.xml --cov-branch --cov-report=term --cov-report=html
+
+run: clean
+	@cd src && flask run -p 5000
