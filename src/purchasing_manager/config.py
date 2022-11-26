@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Flask
@@ -6,13 +7,14 @@ from .application.exceptions import ConfigurationNotValid
 
 
 class BaseConfig:
-    VERSION = "1.0.0"
+    LOGS_LEVEL = logging.INFO
     SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
+    VERSION = "1.0.0"
 
 
 class DevelopmentConfig(BaseConfig):
-    pass
+    LOGS_LEVEL = logging.DEBUG
 
 
 class TestingConfig(BaseConfig):

@@ -18,7 +18,7 @@ ns.add_model(health.name, health)
 
 
 @ns.response(200, "OK", health)
-@ns.route("/", "/healthz")
+@ns.route("", "/healthz")
 class Index(Resource):
     def get(self) -> dict:
         return dict(service="Purchasing Manager", version=app.config["VERSION"])

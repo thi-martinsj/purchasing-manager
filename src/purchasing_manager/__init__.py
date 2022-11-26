@@ -1,7 +1,11 @@
+import json
+import logging
 import os
+import sys
 
+import json_logging
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
@@ -14,6 +18,7 @@ DEPLOY_ENV = os.environ.get("DEPLOY_ENV", "Development")
 
 app_path = os.path.dirname(os.path.abspath(__file__))
 db = SQLAlchemy(session_options={"autoflush": False})
+logger = logging.getLogger("purhasing-manager")
 migrate = Migrate()
 
 
@@ -23,6 +28,7 @@ def create_app() -> Flask:
     set_app_config(app, DEPLOY_ENV)
     _register_blueprints(app)
     _set_database_config(app)
+    _configure_logger(app)
 
     return app
 
@@ -34,3 +40,35 @@ def _register_blueprints(app: Flask) -> None:
 def _set_database_config(app: Flask) -> None:
     db.init_app(app)
     migrate.init_app(app=app, db=db, directory=os.path.join(app_path, "..", "migrations"))
+
+
+def _configure_logger(app: Flask) -> None:
+    if not json_logging.ENABLE_JSON_LOGGING:
+        json_logging.init_flask(enable_json=True)
+        json_logging.init_request_instrument(app)
+
+        logger.setLevel(app.config["LOGS_LEVEL"])
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+
+    @app.before_request
+    def log_request():
+        logger.info(
+            "Request received",
+            extra={"props": {"path": request.path, "method": request.method}},
+        )
+
+    @app.after_request
+    def log_response(response):
+        logger = logging.getLogger("purhasing-manager")
+        logger.info(
+            "Request response",
+            extra={
+                "props": {
+                    "path": request.path,
+                    "method": request.method,
+                    "status": response.status_code,
+                }
+            },
+        )
+
+        return response
