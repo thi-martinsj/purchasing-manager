@@ -7,3 +7,7 @@ class ClientRepositoryABC(ABC):
     @classmethod
     def list(cls, *args, **kwargs) -> list[Client]:
         raise NotImplementedError
+
+    @classmethod
+    def retrieve(cls, id: str) -> Client:
+        raise NotImplementedError

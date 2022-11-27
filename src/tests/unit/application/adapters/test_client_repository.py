@@ -103,3 +103,36 @@ def test_list_clients_raise_exception(app):
         ClientRepository.list(limit="xpto")
 
     assert message == str(e.value)
+
+
+def test_retrieve_client_must_return_with_success(app):
+    clients_obj = generate_clients_objects(2)
+    expected_response = clients_obj[1].dict
+
+    for client in clients_obj:
+        db.session.add(client)
+        db.session.commit()
+
+    client = ClientRepository.retrieve(clients_obj[1].id)
+
+    assert expected_response == client.dict
+
+
+def test_retrieve_client_must_return_none(app):
+    clients_obj = generate_clients_objects(1)
+
+    db.session.add(clients_obj[0])
+    db.session.commit()
+
+    client = ClientRepository.retrieve("xpto")
+
+    assert client is None
+
+
+def test_retrieve_client_raise_exception():
+    message = "Error when trying to retrieve a client from database"
+
+    with pytest.raises(DatabaseException) as e:
+        ClientRepository.retrieve("foo")
+
+    assert message == str(e.value)

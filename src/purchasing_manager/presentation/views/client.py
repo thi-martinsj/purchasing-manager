@@ -27,3 +27,13 @@ class Client(Resource):
 
         client = ClientUseCases()
         return client.get_clients(**params)
+
+
+@ns.route("/<uuid:id>")
+class SpecificClient(Resource):
+    @ns.response(200, "Client object", client)
+    @ns.response(404, "Client not found", not_found_error)
+    @ns.response(500, "Internal server error", internal_server_error)
+    def get(self, id) -> client:
+        client = ClientUseCases()
+        return client.retrieve(str(id))

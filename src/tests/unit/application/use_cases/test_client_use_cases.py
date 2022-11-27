@@ -1,9 +1,12 @@
+from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 
 from purchasing_manager.application.use_cases.client import ClientUseCases
 from tests.doubles.stub import generate_clients_objects
+
+NOT_FOUND_MESSAGE = dict(message="Clients not found")
 
 
 @patch("purchasing_manager.application.adapters.client.ClientRepository.list")
@@ -20,10 +23,10 @@ def test_get_clients_return_a_list_of_clients(mock_list):
 
 @pytest.mark.parametrize("list_response", [[], None])
 @patch("purchasing_manager.application.adapters.client.ClientRepository.list")
-def test_get_clients_return_clients_not_found(mock_list, list_response):
+def test_get_clients_return_not_found(mock_list, list_response):
     mock_list.return_value = list_response
 
-    expected_response = {"message": "Clients not found"}, 404
+    expected_response = NOT_FOUND_MESSAGE, HTTPStatus.NOT_FOUND
 
     response = ClientUseCases().get_clients()
 
@@ -37,5 +40,36 @@ def test_get_clients_raises_exception(mock_list):
 
     with pytest.raises(Exception) as e:
         ClientUseCases().get_clients()
+
+    assert message == str(e.value)
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.retrieve")
+def test_retrieve_return_a_client(mock_retrieve):
+    client = generate_clients_objects(1)[0]
+    mock_retrieve.return_value = client
+
+    response = ClientUseCases().retrieve("foo")
+
+    assert client.dict == response
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.retrieve")
+def test_retrieve_return_not_found(mock_retrieve):
+    mock_retrieve.return_value = None
+    expected_response = NOT_FOUND_MESSAGE, HTTPStatus.NOT_FOUND
+
+    response = ClientUseCases().retrieve("xpto")
+
+    assert expected_response == response
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.retrieve")
+def test_retrieve_raises_exception(mock_retrieve):
+    message = "Aff...."
+    mock_retrieve.side_effect = Exception(message)
+
+    with pytest.raises(Exception) as e:
+        ClientUseCases().retrieve("xpto")
 
     assert message == str(e.value)
