@@ -9,7 +9,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .config import set_app_config
 
-
 app_path = os.path.dirname(os.path.abspath(__file__))
 db = SQLAlchemy(session_options={"autoflush": False})
 logger = logging.getLogger("purchasing-manager")

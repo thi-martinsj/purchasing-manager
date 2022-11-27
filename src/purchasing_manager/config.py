@@ -33,11 +33,9 @@ def set_app_config(app: Flask) -> None:
     DEPLOY_ENV = os.environ.get("DEPLOY_ENV", "Development")
 
     try:
-        config = {
-            "Development": DevelopmentConfig,
-            "Testing": TestingConfig,
-            "Production": ProductionConfig
-        }[DEPLOY_ENV]
+        config = {"Development": DevelopmentConfig, "Testing": TestingConfig, "Production": ProductionConfig}[
+            DEPLOY_ENV
+        ]
 
         app.config.from_object(config)
     except KeyError as e:

@@ -10,6 +10,7 @@ def app():
     os.environ["DEPLOY_ENV"] = "Testing"
 
     app = create_app()
+    app.app_context().push()
 
     with app.app_context():
         db.drop_all()

@@ -16,7 +16,7 @@ class ClientRepository(ClientRepositoryABC):
                 "Tring to retrieve a list of clients from database",
                 extra={"props": {"table": "client", "filters": json.dumps(kwargs), "offset": offset, "limit": limit}},
             )
-            return Client.query.filter_by(**kwargs).offset(offset).limit(limit)
+            return Client.query.filter_by(**kwargs).offset(offset).limit(limit).all()
         except Exception as e:
             message = "Error when trying to retrieve a list of clients from database"
             logger.error(
