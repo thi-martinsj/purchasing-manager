@@ -1,8 +1,8 @@
 """Add Client Model
 
-Revision ID: f0cfb5f7c59a
+Revision ID: 483c9aaff8a3
 Revises: 
-Create Date: 2022-11-25 02:47:26.503925
+Create Date: 2022-11-26 19:57:09.544049
 
 """
 import sqlalchemy as sa
@@ -10,7 +10,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "f0cfb5f7c59a"
+revision = "483c9aaff8a3"
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,7 +24,7 @@ def upgrade():
         sa.Column("name", sa.String(length=50), nullable=False),
         sa.Column("document", sa.String(length=11), nullable=False),
         sa.Column("phone", sa.String(length=11), nullable=False),
-        sa.Column("email", sa.String(length=30), nullable=False),
+        sa.Column("email", sa.String(length=50), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_client_document"), "client", ["document"], unique=False)
