@@ -1,9 +1,12 @@
 import logging
 import os
 
+from dotenv import load_dotenv
 from flask import Flask
 
 from .application.exceptions import ConfigurationNotValid
+
+load_dotenv()
 
 
 class BaseConfig:
@@ -18,12 +21,23 @@ class DevelopmentConfig(BaseConfig):
 
 
 class TestingConfig(BaseConfig):
-    SQLALCHEMY_DATABASE_URI = "postgresql://"
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
-def set_app_config(app: Flask, mode: str) -> None:
+class ProductionConfig(BaseConfig):
+    pass
+
+
+def set_app_config(app: Flask) -> None:
+    DEPLOY_ENV = os.environ.get("DEPLOY_ENV", "Development")
+
     try:
-        config = {"Development": DevelopmentConfig, "Testing": TestingConfig}[mode]
+        config = {
+            "Development": DevelopmentConfig,
+            "Testing": TestingConfig,
+            "Production": ProductionConfig
+        }[DEPLOY_ENV]
 
         app.config.from_object(config)
     except KeyError as e:
