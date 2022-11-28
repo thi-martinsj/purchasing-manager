@@ -2,6 +2,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from purchasing_manager import db
+from purchasing_manager.application.adapters.client import ClientRepository
 from tests.doubles.stub import generate_clients_objects
 
 NOT_FOUND_MESSAGE = dict(message="Clients not found")
@@ -78,6 +79,64 @@ def test_get_client_must_return_500(mock_retrieve, api_client):
     mock_retrieve.side_effect = Exception("Ohh my God :(")
 
     response = api_client.get("/api/client/4fd36341-ab6e-4c2d-a0d4-de39207f88a4")
+
+    assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
+    assert INTERNAL_SERVER_ERROR_MESSAGE == response.json
+
+
+def test_create_a_new_client_must_return_201(api_client):
+    client = generate_clients_objects(1)[0]
+    payload = client.dict
+    payload["full_name"] = client.name
+
+    response = api_client.post("/api/client", headers={"Content-Type": "application/json"}, json=payload)
+    response_json = response.json
+
+    assert HTTPStatus.CREATED == response.status_code
+    assert client.name.title() == response_json["name"]
+    assert client.document == response_json["document"]
+    assert 1 == len(ClientRepository.list())
+
+
+def test_create_a_new_client_must_return_400_when_some_attribute_is_missing(api_client):
+    payload = {}
+    expected_message = dict(message="Missing the following attribute: 'full_name'")
+
+    response = api_client.post("/api/client", headers={"Content-Type": "application/json"}, json=payload)
+
+    assert HTTPStatus.BAD_REQUEST == response.status_code
+    assert expected_message == response.json
+    assert 0 == len(ClientRepository.list())
+
+
+def test_create_a_new_client_must_return_400_when_client_already_created(api_client):
+    expected_response = dict(message="User already added in database")
+    client = generate_clients_objects(1)[0]
+    payload = client.dict
+    payload["full_name"] = client.name
+
+    response_1 = api_client.post("/api/client", headers={"Content-Type": "application/json"}, json=payload)
+
+    response_2 = api_client.post("/api/client", headers={"Content-Type": "application/json"}, json=payload)
+
+    db.session.rollback()
+
+    assert HTTPStatus.CREATED == response_1.status_code
+    assert client.document == response_1.json["document"]
+    assert HTTPStatus.BAD_REQUEST == response_2.status_code
+    assert expected_response == response_2.json
+    assert 1 == len(ClientRepository.list())
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.create")
+def test_create_a_new_client_must_return_500_when_some_unknown_exception_is_raised(mock_create, api_client):
+    mock_create.side_effect = Exception("I'm not an exception, I'm a feature :))))")
+
+    client = generate_clients_objects(1)[0]
+    payload = client.dict
+    payload["full_name"] = client.name
+
+    response = api_client.post("/api/client", headers={"Content-Type": "application/json"}, json=payload)
 
     assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
     assert INTERNAL_SERVER_ERROR_MESSAGE == response.json

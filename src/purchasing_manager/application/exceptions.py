@@ -4,3 +4,11 @@ class ConfigurationNotValid(Exception):
 
 class DatabaseException(Exception):
     pass
+
+
+class MissingAttributeException(Exception):
+    pass
+
+
+class DuplicateError(Exception):
+    pass

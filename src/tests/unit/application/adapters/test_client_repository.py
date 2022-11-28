@@ -1,8 +1,11 @@
+from unittest.mock import Mock, patch
+
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from purchasing_manager import db
 from purchasing_manager.application.adapters.client import ClientRepository
-from purchasing_manager.application.exceptions import DatabaseException
+from purchasing_manager.application.exceptions import DatabaseException, DuplicateError
 from tests.doubles.stub import generate_clients_objects
 
 
@@ -136,3 +139,48 @@ def test_retrieve_client_raise_exception():
         ClientRepository.retrieve("foo")
 
     assert message == str(e.value)
+
+
+def test_create_client_must_add_with_success(app):
+    client = generate_clients_objects(1)[0]
+
+    ClientRepository().create(client)
+
+    client_obj = ClientRepository.retrieve(client.id)
+    all_clients = ClientRepository.list()
+
+    assert client.dict == client_obj.dict
+    assert 1 == len(all_clients)
+
+
+def test_create_client_cant_add_2_clients_with_the_same_document(app):
+    client = generate_clients_objects(1)[0]
+
+    ClientRepository().create(client)
+    ClientRepository().create(client)
+
+    all_clients = ClientRepository().list()
+
+    assert 1 == len(all_clients)
+
+
+@patch("purchasing_manager.db.session.add")
+def test_create_client_raise_integrity_error(mock_add, app):
+    mock_add.side_effect = IntegrityError(Mock(), Mock(), Mock())
+    message = "User already added in database"
+
+    with pytest.raises(DuplicateError) as e:
+        ClientRepository().create(Mock())
+
+    assert message == str(e.value)
+    assert 0 == len(ClientRepository().list())
+
+
+def test_create_client_raise_exception(app):
+    message = "Error when trying to save a new client in database"
+
+    with pytest.raises(Exception) as e:
+        ClientRepository().create(Mock())
+
+    assert message == str(e.value)
+    assert 0 == len(ClientRepository().list())

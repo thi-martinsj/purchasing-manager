@@ -11,3 +11,7 @@ class ClientRepositoryABC(ABC):
     @classmethod
     def retrieve(cls, id: str) -> Client:
         raise NotImplementedError
+
+    @classmethod
+    def create(cls, client: Client) -> None:
+        raise NotImplementedError

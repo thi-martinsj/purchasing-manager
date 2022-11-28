@@ -10,7 +10,7 @@ class Client(db.Model):
     created_dt = db.Column(db.DateTime(timezone=True), default=datetime.now(), nullable=False)
     updated_dt = db.Column(db.DateTime(timezone=True), default=datetime.now(), onupdate=datetime.now(), nullable=False)
     name = db.Column(db.String(50), nullable=False, index=True)
-    document = db.Column(db.String(11), nullable=False, index=True)
+    document = db.Column(db.String(11), nullable=False, unique=True, index=True)
     phone = db.Column(db.String(11), nullable=False)
     email = db.Column(db.String(50), nullable=False)
 

@@ -1,4 +1,4 @@
-from uuid import uuid4
+from unittest.mock import Mock
 
 import pytest
 
@@ -12,4 +12,9 @@ def test_list_must_raises_exception():
 
 def test_retrieve_must_raises_exception():
     with pytest.raises(NotImplementedError):
-        ClientRepositoryABC.retrieve(str(uuid4()))
+        ClientRepositoryABC.retrieve(Mock())
+
+
+def test_create_must_raises_exception():
+    with pytest.raises(NotImplementedError):
+        ClientRepositoryABC.create(Mock())

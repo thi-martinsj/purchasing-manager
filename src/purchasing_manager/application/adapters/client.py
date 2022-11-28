@@ -1,7 +1,10 @@
 import json
 import logging
 
-from purchasing_manager.application.exceptions import DatabaseException
+from sqlalchemy.exc import IntegrityError
+
+from purchasing_manager import db
+from purchasing_manager.application.exceptions import DatabaseException, DuplicateError
 from purchasing_manager.domain.models.client import Client
 from purchasing_manager.domain.ports.client import ClientRepositoryABC
 
@@ -41,4 +44,23 @@ class ClientRepository(ClientRepositoryABC):
         except Exception as e:
             message = "Error when trying to retrieve a client from database"
             logger.exception(message, extra={"props": {"table": "client", "id": id, "exception": str(e)}})
+            raise DatabaseException(message)
+
+    @classmethod
+    def create(cls, client: Client) -> None:
+        try:
+            logger.info(
+                "Trying to save a new client in database",
+                extra={"propos": {"table": "client", "client": client.dict}},
+            )
+
+            db.session.add(client)
+            db.session.commit()
+        except IntegrityError as e:
+            message = "User already added in database"
+            logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
+            raise DuplicateError(message)
+        except Exception as e:
+            message = "Error when trying to save a new client in database"
+            logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
             raise DatabaseException(message)

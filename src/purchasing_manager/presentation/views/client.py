@@ -3,7 +3,7 @@ from flask_restx import Api, Resource
 
 from purchasing_manager.application.use_cases.client import ClientUseCases
 
-from .schemas import client, internal_server_error, not_found_error
+from .schemas import client, internal_server_error, invalid_payload, not_found_error
 
 client_bp = Blueprint("Client", __name__, url_prefix="/api/client")
 
@@ -13,6 +13,7 @@ ns = api.namespace("", description="Client API endpoints")
 ns.add_model(client.name, client)
 ns.add_model(internal_server_error.name, internal_server_error)
 ns.add_model(not_found_error.name, not_found_error)
+ns.add_model(invalid_payload.name, invalid_payload)
 
 
 @ns.route("")
@@ -27,6 +28,15 @@ class Client(Resource):
 
         client = ClientUseCases()
         return client.get_clients(**params)
+
+    @ns.response(201, "Client object", client)
+    @ns.response(400, "Invalid payload", invalid_payload)
+    @ns.response(500, "Internal server error", internal_server_error)
+    @ns.expect(client)
+    def post(self):
+        kwargs = request.get_json()
+        client = ClientUseCases()
+        return client.create(**kwargs)
 
 
 @ns.route("/<uuid:id>")
