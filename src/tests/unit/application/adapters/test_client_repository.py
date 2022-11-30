@@ -266,3 +266,48 @@ def test_update_client_raise_database_exception_when_some_unknown_exception_is_r
         ClientRepository().update(new_client)
 
     assert message == str(e.value)
+
+
+def test_delete_client_must_delete_successfully(app):
+    client = generate_clients_objects(1)[0]
+
+    db.session.add(client)
+    db.session.commit()
+
+    assert 1 == len(ClientRepository.list())
+
+    ClientRepository.delete(client.id)
+
+    assert 0 == len(ClientRepository.list())
+
+
+def test_delete_client_must_raise_not_found_exception_when_client_is_not_in_database(app):
+    clients = generate_clients_objects(3)
+    message = "Client not found"
+
+    for client in clients[1:]:
+        db.session.add(client)
+        db.session.commit()
+
+    assert 2 == len(ClientRepository.list())
+
+    with pytest.raises(NotFoundException) as e:
+        ClientRepository.delete(clients[0].id)
+
+    assert message == str(e.value)
+    assert 2 == len(ClientRepository.list())
+
+
+@patch("purchasing_manager.db.session.delete")
+def test_delete_client_must_raise_database_exception_when_some_unknown_exception_is_raised(mock_delete, app):
+    mock_delete.side_effect = Exception("It's not a bug. It's feature")
+    client = generate_clients_objects(1)[0]
+    message = f"Error when trying to delete a client with id '{client.id}' in database"
+
+    db.session.add(client)
+    db.session.commit()
+
+    with pytest.raises(DatabaseException) as e:
+        ClientRepository.delete(client.id)
+
+    assert message == str(e.value)

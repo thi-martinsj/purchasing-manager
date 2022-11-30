@@ -198,3 +198,49 @@ def test_update_a_client_must_return_500_when_some_unknown_exception_is_thrown(m
 
     assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
     assert INTERNAL_SERVER_ERROR_MESSAGE == response.json
+
+
+def test_delete_client_must_return_successfully_with_status_204(api_client):
+    client = generate_clients_objects(1)[0]
+
+    db.session.add(client)
+    db.session.commit()
+
+    assert 1 == len(ClientRepository.list())
+
+    response = api_client.delete(f"/api/client/{client.id}")
+
+    assert 0 == len(ClientRepository.list())
+    assert HTTPStatus.NO_CONTENT == response.status_code
+
+
+def test_delete_client_must_return_404_when_client_is_not_found(api_client):
+    clients = generate_clients_objects(2)
+
+    db.session.add(clients[0])
+    db.session.commit()
+
+    assert 1 == len(ClientRepository.list())
+
+    response = api_client.delete(f"/api/client/{clients[1].id}")
+
+    assert 1 == len(ClientRepository.list())
+    assert HTTPStatus.NOT_FOUND == response.status_code
+    assert NOT_FOUND_MESSAGE == response.json
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.delete")
+def test_delete_client_must_return_500_when_some_unknown_exception_is_raised(mock_delete, api_client):
+    mock_delete.side_effect = Exception("You won't delete my brother lol")
+    client = generate_clients_objects(1)[0]
+
+    db.session.add(client)
+    db.session.commit()
+
+    assert 1 == len(ClientRepository.list())
+
+    response = api_client.delete(f"/api/client/{client.id}")
+
+    assert 1 == len(ClientRepository.list())
+    assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
+    assert INTERNAL_SERVER_ERROR_MESSAGE == response.json

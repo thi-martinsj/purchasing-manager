@@ -31,7 +31,7 @@ class ClientUseCases:
 
         return client.dict
 
-    def create(self, **kwargs) -> list[dict[Client], HTTPStatus]:
+    def create(self, **kwargs) -> tuple[dict[Client], HTTPStatus]:
         try:
             client = ClientUseCases._create_client_object(**kwargs)
             ClientRepository.create(client)
@@ -63,6 +63,14 @@ class ClientUseCases:
             return NOT_FOUND_CLIENT_MESSAGE, HTTPStatus.NOT_FOUND
 
         return new_client.dict
+
+    def delete(self, id: str) -> tuple[None, HTTPStatus]:
+        try:
+            ClientRepository.delete(id)
+        except NotFoundException:
+            return NOT_FOUND_CLIENT_MESSAGE, HTTPStatus.NOT_FOUND
+
+        return None, HTTPStatus.NO_CONTENT
 
     @classmethod
     def _create_client_object(cls, **kwargs) -> Client:

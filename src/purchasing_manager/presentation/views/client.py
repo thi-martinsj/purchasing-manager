@@ -58,3 +58,10 @@ class SpecificClient(Resource):
         kwargs["id"] = str(id)
         client = ClientUseCases()
         return client.update(**kwargs)
+
+    @ns.response(204, "Client deleted with sucess")
+    @ns.response(404, "Client not found", not_found_error)
+    @ns.response(500, "Internal server error", internal_server_error)
+    def delete(self, id) -> None:
+        client = ClientUseCases()
+        return client.delete(str(id))

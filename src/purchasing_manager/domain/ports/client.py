@@ -19,3 +19,7 @@ class ClientRepositoryABC(ABC):
     @classmethod
     def update(cls, client: Client) -> Client:
         raise NotImplementedError
+
+    @classmethod
+    def delete(cls, id: str) -> None:
+        raise NotImplementedError

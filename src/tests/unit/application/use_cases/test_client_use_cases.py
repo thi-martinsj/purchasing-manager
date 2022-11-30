@@ -268,3 +268,36 @@ def test_delete_unwanted_fields_must_return_successfully(args, kwargs, expected_
     response = ClientUseCases()._delete_unwanted_fields(*args, **kwargs)
 
     assert expected_response == response
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.delete")
+def test_delete_must_return_none_and_204(mock_delete):
+    expected_response = (None, HTTPStatus.NO_CONTENT)
+
+    response = ClientUseCases().delete("xpto")
+
+    mock_delete.assert_called_once_with("xpto")
+    assert expected_response == response
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.delete")
+def test_delete_must_return_not_found(mock_delete):
+    expected_response = (NOT_FOUND_MESSAGE, HTTPStatus.NOT_FOUND)
+    mock_delete.side_effect = NotFoundException()
+
+    response = ClientUseCases().delete("foo")
+
+    mock_delete.assert_called_once_with("foo")
+    assert expected_response == response
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.delete")
+def test_delete_must_raise_exception_when_some_unknown_exception_is_raise(mock_delete):
+    message = "I'm bad :O"
+    mock_delete.side_effect = Exception(message)
+
+    with pytest.raises(Exception) as e:
+        ClientUseCases().delete("test")
+
+    mock_delete.assert_called_once_with("test")
+    assert message == str(e.value)

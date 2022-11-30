@@ -23,3 +23,8 @@ def test_create_must_raises_exception():
 def test_update_must_raises_exception():
     with pytest.raises(NotImplementedError):
         ClientRepositoryABC.update(Mock())
+
+
+def test_delete_must_raises_exception():
+    with pytest.raises(NotImplementedError):
+        ClientRepositoryABC.delete(Mock())

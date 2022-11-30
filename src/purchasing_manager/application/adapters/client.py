@@ -100,3 +100,27 @@ class ClientRepository(ClientRepositoryABC):
             message = f"Error when trying to update a client with id '{client.id}' in database"
             logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
             raise DatabaseException(message)
+
+    @classmethod
+    def delete(cls, id: str) -> None:
+        try:
+            logger.info(
+                f"Trying to delete a client with id '{id}' in database",
+                extra={"props": {"table": "client", "id": id}},
+            )
+
+            client = Client.query.filter_by(id=id).first()
+
+            if not client:
+                raise NotFoundException("Client not found")
+
+            db.session.delete(client)
+            db.session.commit()
+        except NotFoundException as e:
+            message = f"Error when trying to delete a client with id '{id}' in database. Client not found."
+            logger.exception(message, extra={"propos": {"table": "client", "id": id, "exception": str(e)}})
+            raise e
+        except Exception as e:
+            message = f"Error when trying to delete a client with id '{id}' in database"
+            logger.exception(message, extra={"propos": {"table": "client", "id": id, "exception": str(e)}})
+            raise DatabaseException(message)
