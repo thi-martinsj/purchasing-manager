@@ -47,3 +47,14 @@ class SpecificClient(Resource):
     def get(self, id) -> client:
         client = ClientUseCases()
         return client.retrieve(str(id))
+
+    @ns.response(200, "Client object", client)
+    @ns.response(400, "Invalid payload", invalid_payload)
+    @ns.response(404, "Client not found", not_found_error)
+    @ns.response(500, "Internal server error", internal_server_error)
+    @ns.expect(client)
+    def patch(self, id) -> client:
+        kwargs = request.get_json()
+        kwargs["id"] = str(id)
+        client = ClientUseCases()
+        return client.update(**kwargs)

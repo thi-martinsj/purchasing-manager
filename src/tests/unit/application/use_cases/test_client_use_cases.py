@@ -6,6 +6,7 @@ import pytest
 from purchasing_manager.application.exceptions import (
     DuplicateError,
     MissingAttributeException,
+    NotFoundException,
 )
 from purchasing_manager.application.use_cases.client import ClientUseCases
 from tests.doubles.stub import generate_clients_objects
@@ -177,3 +178,93 @@ def test_get_attribute_raises_exception(kwargs):
         ClientUseCases._get_attribute_or_raise_exception("abc", **kwargs)
 
     assert message == str(e.value)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(id="xpto", document="12345678941", full_name="Ciclano"),
+        dict(id="abc", phone="11999887766", email="test@example.com"),
+        dict(),
+    ],
+)
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._get_attribute_or_raise_exception")
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._delete_unwanted_fields")
+@patch("purchasing_manager.application.adapters.client.ClientRepository.update")
+def test_update_must_update_success_and_return_dict(mock_update, mock_delete_fields, mock_get_attr, kwargs):
+    default_kwargs = dict(kwargs)
+    client = generate_clients_objects(1)[0]
+    mock_delete_fields.return_value = kwargs
+    mock_update.return_value = client
+
+    response = ClientUseCases().update(**kwargs)
+
+    mock_get_attr.assert_called_once_with("id", **default_kwargs)
+    mock_delete_fields.assert_called_once_with(*["created_dt", "updated_dt", "document"], **default_kwargs)
+    mock_update.assert_called_once()
+    assert client.dict == response
+
+
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._get_attribute_or_raise_exception")
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._delete_unwanted_fields")
+@patch("purchasing_manager.application.adapters.client.ClientRepository.update")
+def test_update_must_return_bad_request_when_some_field_is_invalid(mock_update, mock_delete_fields, mock_get_attr):
+    kwargs = dict(xpto="foo")
+    mock_delete_fields.return_value = kwargs
+
+    response = ClientUseCases().update(**kwargs)
+
+    mock_get_attr.assert_called_once_with("id", **kwargs)
+    mock_delete_fields.assert_called_once_with(*["created_dt", "updated_dt", "document"], **kwargs)
+    mock_update.assert_not_called()
+    assert HTTPStatus.BAD_REQUEST in response
+
+
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._get_attribute_or_raise_exception")
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._delete_unwanted_fields")
+@patch("purchasing_manager.application.adapters.client.ClientRepository.update")
+def test_update_must_return_not_found_when_some_client_is_not_found(mock_update, mock_delete_fields, mock_get_attr):
+    kwargs = dict(phone="11999887766")
+    mock_delete_fields.return_value = kwargs
+    mock_update.side_effect = NotFoundException()
+
+    response = ClientUseCases().update(**kwargs)
+
+    mock_get_attr.assert_called_once_with("id", **kwargs)
+    mock_delete_fields.assert_called_once_with(*["created_dt", "updated_dt", "document"], **kwargs)
+    assert (dict(message="Clients not found"), HTTPStatus.NOT_FOUND) == response
+
+
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._get_attribute_or_raise_exception")
+@patch("purchasing_manager.application.use_cases.client.ClientUseCases._delete_unwanted_fields")
+@patch("purchasing_manager.application.adapters.client.ClientRepository.update")
+def test_update_must_raise_exception_when_some_unknown_exception_is_thrown(
+    mock_update, mock_delete_fields, mock_get_attr
+):
+    message = "Did you think I wouldn't come back?"
+    kwargs = dict(phone="11999887766")
+    mock_delete_fields.return_value = kwargs
+    mock_update.side_effect = Exception(message)
+
+    with pytest.raises(Exception) as e:
+        ClientUseCases().update(**kwargs)
+
+    mock_get_attr.assert_called_once_with("id", **kwargs)
+    mock_delete_fields.assert_called_once_with(*["created_dt", "updated_dt", "document"], **kwargs)
+    assert message == str(e.value)
+
+
+@pytest.mark.parametrize(
+    ["args", "kwargs", "expected_response"],
+    [
+        [["xpto"], {"abc": 1, "xpto": 2}, {"abc": 1}],
+        [["foo"], {"abc": 1, "xpto": 2}, {"abc": 1, "xpto": 2}],
+        [["xpto", "foo"], {}, {}],
+        [[], {"abc": 1, "xpto": 2}, {"abc": 1, "xpto": 2}],
+        [[], {}, {}],
+    ],
+)
+def test_delete_unwanted_fields_must_return_successfully(args, kwargs, expected_response):
+    response = ClientUseCases()._delete_unwanted_fields(*args, **kwargs)
+
+    assert expected_response == response

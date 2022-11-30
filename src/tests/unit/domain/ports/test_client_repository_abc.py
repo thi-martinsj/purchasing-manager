@@ -18,3 +18,8 @@ def test_retrieve_must_raises_exception():
 def test_create_must_raises_exception():
     with pytest.raises(NotImplementedError):
         ClientRepositoryABC.create(Mock())
+
+
+def test_update_must_raises_exception():
+    with pytest.raises(NotImplementedError):
+        ClientRepositoryABC.update(Mock())

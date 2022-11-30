@@ -20,11 +20,11 @@ lint:
 	@echo "Lint - Running lint"
 	@flake8 --config=.flake8 src/*
 
-tests: clean
+tests: clean lint 
 	@echo "Tests - Running testing without coverage"
 	@cd src && pytest tests/ -s -v
 
-coverage: clean
+coverage: clean lint
 	@echo "Coverage - Running testing with coverage"
 	@cd src && pytest --cov-report term-missing --cov=purchasing_manager -s -vv \
 	--junitxml=test_reports/junit.xml --cov-branch --cov-report=term --cov-report=html

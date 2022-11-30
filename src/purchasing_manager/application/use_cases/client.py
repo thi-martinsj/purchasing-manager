@@ -6,6 +6,7 @@ from purchasing_manager.application.adapters.client import ClientRepository
 from purchasing_manager.application.exceptions import (
     DuplicateError,
     MissingAttributeException,
+    NotFoundException,
 )
 from purchasing_manager.domain.models.client import Client
 
@@ -43,6 +44,26 @@ class ClientUseCases:
         except Exception as e:
             raise e
 
+    def update(self, **kwargs) -> dict[Client]:
+        ClientUseCases._get_attribute_or_raise_exception("id", **kwargs)
+        fields = ClientUseCases._delete_unwanted_fields(*["created_dt", "updated_dt", "document"], **kwargs)
+
+        if "full_name" in fields:
+            fields["name"] = fields.get("full_name")
+            fields.pop("full_name")
+
+        try:
+            client = Client(**fields)
+        except TypeError as e:
+            return dict(message=str(e)), HTTPStatus.BAD_REQUEST
+
+        try:
+            new_client = ClientRepository.update(client)
+        except NotFoundException:
+            return NOT_FOUND_CLIENT_MESSAGE, HTTPStatus.NOT_FOUND
+
+        return new_client.dict
+
     @classmethod
     def _create_client_object(cls, **kwargs) -> Client:
         attrs = dict(
@@ -63,3 +84,13 @@ class ClientUseCases:
             return kwargs.get(attr)
 
         raise MissingAttributeException(f"Missing the following attribute: '{attr}'")
+
+    @classmethod
+    def _delete_unwanted_fields(cls, *args, **kwargs) -> dict:
+        new_kwargs = kwargs
+
+        for arg in args:
+            if arg in new_kwargs:
+                new_kwargs.pop(arg)
+
+        return new_kwargs

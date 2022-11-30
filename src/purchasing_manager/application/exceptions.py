@@ -12,3 +12,7 @@ class MissingAttributeException(Exception):
 
 class DuplicateError(Exception):
     pass
+
+
+class NotFoundException(Exception):
+    pass

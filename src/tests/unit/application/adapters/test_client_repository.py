@@ -5,7 +5,12 @@ from sqlalchemy.exc import IntegrityError
 
 from purchasing_manager import db
 from purchasing_manager.application.adapters.client import ClientRepository
-from purchasing_manager.application.exceptions import DatabaseException, DuplicateError
+from purchasing_manager.application.exceptions import (
+    DatabaseException,
+    DuplicateError,
+    NotFoundException,
+)
+from purchasing_manager.domain.models.client import Client
 from tests.doubles.stub import generate_clients_objects
 
 
@@ -184,3 +189,80 @@ def test_create_client_raise_exception(app):
 
     assert message == str(e.value)
     assert 0 == len(ClientRepository().list())
+
+
+@pytest.mark.parametrize(
+    "attrs_to_update",
+    [[], ["name"], ["phone"], ["email"], ["name", "phone"], ["phone", "email"], ["name", "phone", "email"]],
+)
+def test_update_client_must_update_with_success(attrs_to_update, app):
+    def _add_client():
+        client = generate_clients_objects(1)[0]
+
+        db.session.add(client)
+        db.session.commit()
+
+        return client.dict
+
+    old_client = _add_client()
+
+    new_client = Client(id=old_client["id"])
+
+    if "name" in attrs_to_update:
+        new_client.name = "Fulano Beltrano"
+
+    if "phone" in attrs_to_update:
+        new_client.phone = "11999887766"
+
+    if "email" in attrs_to_update:
+        new_client.email = "beltrano@test.com"
+
+    response = ClientRepository().update(new_client)
+
+    assert old_client["id"] == response.id
+    assert old_client["document"] == response.document
+
+    if "name" in attrs_to_update:
+        assert new_client.name == response.name
+        assert old_client["name"] != response.name
+
+    if "phone" in attrs_to_update:
+        assert new_client.phone == response.phone
+        assert old_client["phone"] != response.phone
+
+    if "email" in attrs_to_update:
+        assert new_client.email == response.email
+        assert old_client["email"] != response.email
+
+
+def test_update_client_raise_not_found_exception_when_client_is_not_found(app):
+    message = "Client not found"
+    client = generate_clients_objects(1)[0]
+
+    with pytest.raises(NotFoundException) as e:
+        ClientRepository().update(client)
+
+    assert message == str(e.value)
+
+
+@patch("purchasing_manager.application.adapters.client.logger.info")
+def test_update_client_raise_database_exception_when_some_unknown_exception_is_raised(mock_logger, app):
+    def _add_client():
+        client = generate_clients_objects(1)[0]
+
+        db.session.add(client)
+        db.session.commit()
+
+        return client.dict
+
+    mock_logger.side_effect = Exception("Hello, I'm hereeee ;D")
+    old_client = _add_client()
+
+    new_client = Client(**old_client)
+
+    message = f"Error when trying to update a client with id '{old_client['id']}' in database"
+
+    with pytest.raises(DatabaseException) as e:
+        ClientRepository().update(new_client)
+
+    assert message == str(e.value)

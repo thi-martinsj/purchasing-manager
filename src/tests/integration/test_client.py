@@ -140,3 +140,61 @@ def test_create_a_new_client_must_return_500_when_some_unknown_exception_is_rais
 
     assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
     assert INTERNAL_SERVER_ERROR_MESSAGE == response.json
+
+
+def test_update_a_client_must_update_successfully_with_status_200(api_client):
+    client = generate_clients_objects(1)[0]
+    db.session.add(client)
+    db.session.commit()
+
+    id = client.id
+    payload = dict(phone="11999887766", email="test@example.com", document="12345678910")
+
+    response = api_client.patch(f"/api/client/{id}", headers={"Content-Type": "application/json"}, json=payload)
+    response_json = response.json
+
+    assert HTTPStatus.OK == response.status_code
+    assert payload["phone"] == response_json["phone"]
+    assert payload["email"] == response_json["email"]
+    assert client.id == response_json["id"]
+    assert client.document == response_json["document"]
+    assert str(client.created_dt) == response_json["created_dt"]
+
+
+def test_update_a_client_must_return_400_when_some_field_is_invalid(api_client):
+    expect_response = dict(message="'xpto' is an invalid keyword argument for Client")
+    client = generate_clients_objects(1)[0]
+    db.session.add(client)
+    db.session.commit()
+
+    id = client.id
+    payload = dict(phone="11999887766", xpto="test@example.com")
+
+    response = api_client.patch(f"/api/client/{id}", headers={"Content-Type": "application/json"}, json=payload)
+
+    assert HTTPStatus.BAD_REQUEST == response.status_code
+    assert expect_response == response.json
+
+
+def test_update_a_client_must_return_404_when_client_is_not_found(api_client):
+    client = generate_clients_objects(1)[0]
+    id = client.id
+    payload = dict(phone="11999887766")
+
+    response = api_client.patch(f"/api/client/{id}", headers={"Content-Type": "application/json"}, json=payload)
+
+    assert HTTPStatus.NOT_FOUND == response.status_code
+    assert NOT_FOUND_MESSAGE == response.json
+
+
+@patch("purchasing_manager.application.adapters.client.ClientRepository.update")
+def test_update_a_client_must_return_500_when_some_unknown_exception_is_thrown(mock_update, api_client):
+    client = generate_clients_objects(1)[0]
+    mock_update.side_effect = Exception("Guess who is here? :))))")
+    id = client.id
+    payload = dict(phone="11999887766")
+
+    response = api_client.patch(f"/api/client/{id}", headers={"Content-Type": "application/json"}, json=payload)
+
+    assert HTTPStatus.INTERNAL_SERVER_ERROR == response.status_code
+    assert INTERNAL_SERVER_ERROR_MESSAGE == response.json

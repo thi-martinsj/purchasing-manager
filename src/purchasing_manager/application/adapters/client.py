@@ -4,7 +4,11 @@ import logging
 from sqlalchemy.exc import IntegrityError
 
 from purchasing_manager import db
-from purchasing_manager.application.exceptions import DatabaseException, DuplicateError
+from purchasing_manager.application.exceptions import (
+    DatabaseException,
+    DuplicateError,
+    NotFoundException,
+)
 from purchasing_manager.domain.models.client import Client
 from purchasing_manager.domain.ports.client import ClientRepositoryABC
 
@@ -62,5 +66,37 @@ class ClientRepository(ClientRepositoryABC):
             raise DuplicateError(message)
         except Exception as e:
             message = "Error when trying to save a new client in database"
+            logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
+            raise DatabaseException(message)
+
+    @classmethod
+    def update(cls, client: Client) -> Client:
+        try:
+            logger.info(
+                f"Trying to update a client with id '{client.id}' in database",
+                extra={"props": {"table": "client", "client": client.dict}},
+            )
+
+            old_client = Client.query.filter_by(id=client.id).first()
+
+            if not old_client:
+                raise NotFoundException("Client not found")
+
+            if client.name:
+                old_client.name = client.name.title()
+            if client.phone:
+                old_client.phone = client.phone
+            if client.email:
+                old_client.email = client.email
+
+            db.session.commit()
+
+            return Client.query.filter_by(id=client.id).first()
+        except NotFoundException as e:
+            message = f"Error when trying to update a client with id '{client.id}' in database. Client not found."
+            logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
+            raise e
+        except Exception as e:
+            message = f"Error when trying to update a client with id '{client.id}' in database"
             logger.exception(message, extra={"propos": {"table": "client", "client": client.dict, "exception": str(e)}})
             raise DatabaseException(message)
